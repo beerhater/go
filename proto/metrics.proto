@@ -1,0 +1,32 @@
+syntax = "proto3"; 
+
+package metrics; 
+
+option go_package = "github.com/haterbeer/metrics-agent/proto;metrics";
+
+message Metric {
+  
+  int64 timestamp = 1;
+
+  MemoryStats memory = 2;
+  
+  CPUStats cpu = 3;
+}
+
+message MemoryStats {
+  int64 total = 1; 
+  int64 free = 2;
+}
+
+message CPUStats {
+  double load_1 = 1;  
+  double load_5 = 2;
+  double load_15 = 3;
+}
+
+service MetricsService {
+  rpc SendMetrics (stream Metric) returns (Empty);
+}
+
+message Empty {}
+
