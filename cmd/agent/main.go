@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"      
 	"time"
 
 	"github.com/haterbeer/metrics-agent/internal/collector"
@@ -13,9 +14,16 @@ import (
 )
 
 func main() {
-	conn, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	target := os.Getenv("SERVER_ADDR")
+	if target == "" {
+		target = "localhost:8080"
+	}
+
+	log.Printf("Connecting to %s...", target)
+
+	conn, err := grpc.Dial(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatal("not connect", err)
+		log.Fatalf("could not connect to %s: %v", target, err)
 	}
 	defer conn.Close()
 
@@ -23,21 +31,21 @@ func main() {
 
 	stream, err := client.SendMetrics(context.Background())
 	if err != nil {
-		log.Fatal("cant open stream", err)
+		log.Fatalf("cant open stream: %v", err)
 	}
 
-	log.Println("Agent started. sending metrics to localhost:8080 ")
+	log.Printf("Agent started. Sending metrics to %s", target)
 
 	for {
 		mem, err := collector.GetMemory()
 		if err != nil {
-			log.Println("mem error", err)
+			log.Println("mem error:", err)
 			continue
 		}
 
 		cpu, err := collector.GetCPU()
 		if err != nil {
-			log.Println("cpu error", err)
+			log.Println("cpu error:", err)
 			continue
 		}
 
@@ -46,7 +54,7 @@ func main() {
 		if err := stream.Send(metrics); err != nil {
 			log.Printf("failed to send metrics: %v", err)
 		} else {
-			fmt.Printf("send metrics: mem free %d, load %.2f\n", metrics.Memory.Free, metrics.Cpu.Load_1)
+			fmt.Printf("sent metrics: mem free %d, load %.2f\n", metrics.Memory.Free, metrics.Cpu.Load_1)
 		}
 
 		time.Sleep(5 * time.Second)
