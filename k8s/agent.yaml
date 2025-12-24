@@ -1,0 +1,20 @@
+apiVersion: apps/v1 
+kind: DaemonSet 
+metadata: 
+  name: metrics-agent 
+spec: 
+  selector: 
+    matchLabels: 
+      app: metrics-agent 
+  template: 
+    metadata: 
+      labels: 
+        app: metrics-agent 
+    spec: 
+      containers: 
+        - name: agent 
+          image: my-metrics-agent:v1 
+          imagePullPolicy: Never 
+          env: 
+            - name: SERVER_ADDR 
+              value: "metrics-server:8080"
